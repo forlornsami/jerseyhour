@@ -268,7 +268,7 @@ function discount_pct(array $p): int
 
 function default_sizes(): array
 {
-    $list = array_filter(array_map('trim', explode(',', setting('size_list', 'XS,S,M,L,XL,XXL'))));
+    $list = array_filter(array_map('trim', explode(',', setting('size_list', 'XS,S,M,L,XL,XXL,XXXL'))));
     return $list ?: ['S', 'M', 'L', 'XL'];
 }
 
