@@ -202,6 +202,33 @@ function rich_text(?string $text): string
     return $html;
 }
 
+// ------------------------------------------------------------ size guide ---
+/** Size guide chart image (also shown on the Size Guide page and product modal). */
+const SIZE_GUIDE_IMAGE = 'img/size-guide.jpg';
+
+/** Default Size Guide page text, matching the chart image. */
+function size_guide_default_text(): string
+{
+    return "All measurements are in inches and may vary slightly depending on the style and fabric.\n\n"
+        . "| Size | Chest (inches) | Length (inches) |\n| XS | 18 | 25 |\n| S | 19 | 26 |\n| M | 20 | 27 |\n| L | 21 | 28 |\n| XL | 22 | 29 |\n| XXL | 23 | 30 |\n| XXXL | 24 | 31 |\n\n"
+        . "## How to measure\n\n- **Chest:** measure around the fullest part of your chest, keeping the tape horizontal.\n- **Length:** measure from the highest point of the shoulder to the bottom hem.\n\n"
+        . "## Fit guide\n\nOur jerseys have a regular fit. If you prefer a looser feel, we recommend going one size up.";
+}
+
+/**
+ * Fetch the Size Guide page. Stores still holding the original installer text
+ * are moved to the current chart once; text edited in admin is left alone.
+ */
+function size_guide_page(): ?array
+{
+    $page = row("SELECT * FROM pages WHERE slug = 'size-guide'");
+    if ($page && md5(str_replace("\r\n", "\n", trim((string)$page['content']))) === '2d258108107c48d5be283e3a189bc72c') {
+        $page['content'] = size_guide_default_text();
+        q('UPDATE pages SET content = ?, updated_at = ? WHERE id = ?', [$page['content'], now(), $page['id']]);
+    }
+    return $page;
+}
+
 // -------------------------------------------------------------- products ---
 function product_sizes(array $p): array
 {

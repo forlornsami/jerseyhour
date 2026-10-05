@@ -3,7 +3,7 @@ require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/includes/partials.php';
 
 $slug = (string)($_GET['p'] ?? '');
-$page = $slug !== '' ? row('SELECT * FROM pages WHERE slug = ?', [$slug]) : null;
+$page = $slug === 'size-guide' ? size_guide_page() : ($slug !== '' ? row('SELECT * FROM pages WHERE slug = ?', [$slug]) : null);
 if (!$page) {
     http_response_code(404);
     require __DIR__ . '/404.php';
@@ -22,7 +22,12 @@ require __DIR__ . '/includes/header.php';
   </div>
 </section>
 <div class="container narrow">
-  <article class="rich rich-page"><?= rich_text($page['content']) ?></article>
+  <article class="rich rich-page">
+    <?php if ($slug === 'size-guide'): ?>
+      <figure class="size-guide-img"><img src="<?= e(asset(SIZE_GUIDE_IMAGE)) ?>" alt="JerseyHour size chart: chest and length in inches for sizes XS to XXXL" width="1312" height="1200"></figure>
+    <?php endif; ?>
+    <?= rich_text($page['content']) ?>
+  </article>
   <?php if ($others): ?>
     <nav class="page-links" aria-label="More information">
       <?php foreach ($others as $o): ?><a class="chip" href="<?= e(url('page.php?p=' . rawurlencode($o['slug']))) ?>"><?= e($o['title']) ?></a><?php endforeach; ?>
