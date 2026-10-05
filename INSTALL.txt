@@ -1,0 +1,65 @@
+JERSEYHOUR — WEBSITE + ADMIN PANEL
+==================================
+
+Requirements: any cPanel / PHP hosting with PHP 7.4 or newer (PHP 8.x recommended).
+No database setup needed — it uses SQLite automatically. MySQL is optional.
+
+
+1. UPLOAD
+---------
+a) In cPanel, open File Manager and go to public_html (the folder for jerseyhour.com).
+b) Upload jerseyhour-website.zip and click "Extract".
+c) Make sure the files (index.php, install.php, admin/, assets/ ...) are directly inside
+   public_html — not inside a sub-folder. If they ended up in public_html/jerseyhour,
+   select everything in that folder and "Move" it up one level.
+d) Hidden files: in File Manager > Settings, tick "Show Hidden Files" and confirm that
+   the .htaccess files were extracted (root, includes/, data/, uploads/).
+
+
+2. INSTALL (1 minute)
+---------------------
+a) Visit  https://jerseyhour.com/install.php
+b) Choose your admin username and a strong password.
+c) Leave the database on "Automatic (SQLite)" and click Install.
+   (Prefer MySQL? Create a database + user in cPanel > MySQL Databases first,
+   then pick MySQL in the installer and enter those details.)
+d) Done. The installer locks itself automatically. If it says it could not,
+   delete install.php from File Manager.
+
+If the installer shows a red "not writable" check, set these folders to permission 755
+in File Manager (right-click > Change Permissions): includes, data, uploads, uploads/products, uploads/site
+
+
+3. MANAGE YOUR STORE
+--------------------
+Admin panel:  https://jerseyhour.com/admin/
+
+- Products:   add/edit jerseys, upload photos (drag to reorder), sizes and stock per size,
+              sale prices, badges, hide/show, "Fan favourite" for the homepage.
+- Orders:     every checkout arrives here as "Pending". Use "Mark as Confirmed / Shipped /
+              Delivered". One-tap WhatsApp messages to the customer. Print a packing slip.
+              Cancelling an order puts the stock back automatically.
+- Categories: add, rename, reorder, set tile images.
+- Messages:   Contact-page messages.
+- Pages:      About, Shipping, Returns, Privacy, Size guide.
+- Settings:   logo (+ light version for dark areas), favicon, brand colour, phone, WhatsApp, address, delivery charge, free-delivery limit,
+              homepage headline & image, announcement bar, social links.
+
+The 8 sample jerseys are only for preview — edit or delete them and add your own photos.
+
+
+4. AFTER GOING LIVE
+-------------------
+- Turn on free SSL in cPanel (SSL/TLS Status or "Let's Encrypt"), then open .htaccess
+  and remove the # in front of the 4 "force HTTPS" lines.
+- Submit https://jerseyhour.com/sitemap.php in Google Search Console.
+- Back up regularly: download the data/ folder (your database) and uploads/ folder (photos).
+- Order e-mails go to the address in Settings > Notifications (needs PHP mail on your host;
+  WhatsApp/admin panel work regardless).
+
+
+Forgot your admin password?
+  1. In File Manager, create an empty file named  reset.allow  inside the data/ folder.
+  2. Visit https://jerseyhour.com/admin/reset.php and set a new username + password.
+  3. The reset file is deleted automatically (check it's gone).
+  Never share includes/config.php or the data/ folder with anyone.

@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /cart.php
+Disallow: /checkout.php
+Disallow: /install.php
+Sitemap: https://jerseyhour.com/sitemap.php
