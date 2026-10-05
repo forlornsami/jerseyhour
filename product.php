@@ -22,7 +22,7 @@ $off    = discount_pct($p);
 $store  = setting('store_name', 'JerseyHour');
 $related = rows(product_query_base() . ' WHERE p.active = 1 AND p.id <> ? AND (p.category_id = ? OR p.featured = 1) ORDER BY CASE WHEN p.category_id = ? THEN 0 ELSE 1 END, p.created_at DESC LIMIT 4',
     [$p['id'], (int)$p['category_id'], (int)$p['category_id']]);
-$sizeGuide = row("SELECT * FROM pages WHERE slug = 'size-guide'");
+$sizeGuide = size_guide_page();
 $firstAvail = '';
 foreach ($sizes as $s => $qty) { if ((int)$qty > 0) { $firstAvail = $s; break; } }
 $selfUrl = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'jerseyhour.com') . product_url($p);
@@ -170,6 +170,7 @@ require __DIR__ . '/includes/header.php';
 <div class="modal" id="sizeGuide" role="dialog" aria-modal="true" aria-labelledby="sgTitle" hidden>
   <div class="modal-card">
     <div class="modal-head"><h2 id="sgTitle"><?= e($sizeGuide['title']) ?></h2><button class="icon-btn" type="button" data-close aria-label="Close"><?= icon('close', 22) ?></button></div>
+    <a class="size-guide-img" href="<?= e(asset(SIZE_GUIDE_IMAGE)) ?>" target="_blank" rel="noopener"><img src="<?= e(asset(SIZE_GUIDE_IMAGE)) ?>" alt="JerseyHour size chart: chest and length in inches for sizes XS to XXXL" loading="lazy" width="1312" height="1200"></a>
     <div class="rich"><?= rich_text($sizeGuide['content']) ?></div>
   </div>
 </div>
