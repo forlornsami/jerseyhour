@@ -29,6 +29,8 @@ if (is_post()) {
                 if (!val('SELECT COUNT(*) FROM order_items WHERE image = ?', [$img])) delete_upload($img);
             }
             q('UPDATE order_items SET product_id = NULL WHERE product_id = ?', [$id]);
+            reviews_ready();
+            q('DELETE FROM reviews WHERE product_id = ?', [$id]);
             q('DELETE FROM products WHERE id = ?', [$id]);
             flash('success', '“' . $p['name'] . '” was deleted.' . ($used ? ' Past orders still show it.' : ''));
         }

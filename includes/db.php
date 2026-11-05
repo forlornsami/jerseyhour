@@ -165,7 +165,18 @@ function db_schema(string $driver): array
             ip VARCHAR(64) NOT NULL,
             attempted_at DATETIME NOT NULL
         )$tail",
+        "CREATE TABLE IF NOT EXISTS reviews (
+            id $pk,
+            product_id $fk NOT NULL,
+            name $str NOT NULL,
+            rating $int NOT NULL DEFAULT 5,
+            comment $txt,
+            approved $int NOT NULL DEFAULT 1,
+            ip VARCHAR(64),
+            created_at DATETIME NOT NULL
+        )$tail",
         "CREATE INDEX idx_products_cat ON products (category_id)",
+        "CREATE INDEX idx_reviews_product ON reviews (product_id, approved)",
         "CREATE INDEX idx_items_order ON order_items (order_id)",
         "CREATE INDEX idx_orders_status ON orders (status)",
     ];

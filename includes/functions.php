@@ -604,3 +604,64 @@ function icon(string $name, int $size = 20): string
     $inner = $p[$name] ?? '';
     return '<svg class="i i-' . $name . '" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $inner . '</svg>';
 }
+
+// --------------------------------------------------------------- reviews ---
+/**
+ * Creates the reviews table on first use, so existing installs upgrade
+ * themselves without re-running the installer. Existing data is never touched.
+ */
+function reviews_ready(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (setting('schema_reviews') === '1') return;
+    $driver = db()->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? 'mysql' : 'sqlite';
+    foreach (reviews_schema($driver) as $sql) {
+        try { db()->exec($sql); } catch (Throwable $t) { /* index may already exist */ }
+    }
+    save_setting('schema_reviews', '1');
+    settings_all(true);
+}
+
+function reviews_schema(string $driver): array
+{
+    $pk   = $driver === 'mysql' ? 'INT UNSIGNED AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    $int  = $driver === 'mysql' ? 'INT' : 'INTEGER';
+    $fk   = $driver === 'mysql' ? 'INT UNSIGNED' : 'INTEGER';
+    $txt  = $driver === 'mysql' ? 'MEDIUMTEXT' : 'TEXT';
+    $tail = $driver === 'mysql' ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci' : '';
+    return [
+        "CREATE TABLE IF NOT EXISTS reviews (
+            id $pk,
+            product_id $fk NOT NULL,
+            name VARCHAR(191) NOT NULL,
+            rating $int NOT NULL DEFAULT 5,
+            comment $txt,
+            approved $int NOT NULL DEFAULT 1,
+            ip VARCHAR(64),
+            created_at DATETIME NOT NULL
+        )$tail",
+        "CREATE INDEX idx_reviews_product ON reviews (product_id, approved)",
+    ];
+}
+
+/** ['avg' => float, 'count' => int] for a product's visible reviews. */
+function review_stats(int $productId): array
+{
+    reviews_ready();
+    $r = row('SELECT COUNT(*) AS n, AVG(rating) AS a FROM reviews WHERE product_id = ? AND approved = 1', [$productId]);
+    return ['count' => (int)($r['n'] ?? 0), 'avg' => round((float)($r['a'] ?? 0), 1)];
+}
+
+/** Star row (filled / half / empty) for a 0–5 rating. */
+function stars_html(float $rating, int $size = 16): string
+{
+    $h = '<span class="stars" role="img" aria-label="' . e(number_format($rating, 1)) . ' out of 5 stars" style="--stars-size:' . $size . 'px">';
+    for ($i = 1; $i <= 5; $i++) {
+        $fill = max(0, min(1, $rating - ($i - 1)));
+        $cls = $fill >= .75 ? 'full' : ($fill >= .25 ? 'half' : 'empty');
+        $h .= '<span class="star star-' . $cls . '"></span>';
+    }
+    return $h . '</span>';
+}
