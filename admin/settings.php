@@ -23,7 +23,7 @@ $groups = [
         'free_shipping_over' => ['Free delivery on orders over', 'number', '5000', 'Set 0 to disable free delivery.'],
         'delivery_time'      => ['Delivery time (shown to customers)', 'text', '2 – 5 working days'],
         'currency_symbol'    => ['Currency symbol', 'text', 'Rs.'],
-        'size_list'          => ['Default sizes for new products', 'text', 'XS,S,M,L,XL,XXL', 'Comma-separated. Also used by the size filter in the shop.'],
+        'size_list'          => ['Default sizes for new products', 'text', 'XS,S,M,L,XL,XXL,XXXL', 'Comma-separated. Also used by the size filter in the shop.'],
     ]],
     'home' => ['Homepage', 'The first thing visitors see.', [
         'announcement'  => ['Announcement bar', 'text', '', 'Leave empty to hide the top bar.'],

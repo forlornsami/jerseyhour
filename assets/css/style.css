@@ -457,6 +457,8 @@ ul, ol { padding: 0; margin: 0; list-style: none; }
 .rt-table th, .rt-table td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); }
 .rt-table tr:last-child td { border-bottom: 0; }
 .rt-table th { background: var(--tint); font-weight: 700; }
+.size-guide-img { display: block; margin: 0 0 18px; }
+.size-guide-img img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
 .page-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
 
 /* ---------- Forms ---------- */
