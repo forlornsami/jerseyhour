@@ -14,6 +14,8 @@ function admin_counts(): array
             'pending'  => (int)val("SELECT COUNT(*) FROM orders WHERE status = 'pending'"),
             'messages' => (int)val('SELECT COUNT(*) FROM messages WHERE is_read = 0'),
         ];
+        reviews_ready();
+        $c['reviews'] = (int)val('SELECT COUNT(*) FROM reviews WHERE created_at > ?', [setting('reviews_seen_at', '1970-01-01 00:00:00')]);
     }
     return $c;
 }

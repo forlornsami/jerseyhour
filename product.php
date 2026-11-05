@@ -15,6 +15,37 @@ if (empty($_SESSION['viewed'][$p['id']])) {
     q('UPDATE products SET views = views + 1 WHERE id = ?', [$p['id']]);
 }
 
+// ---- Customer reviews ----
+reviews_ready();
+$rvErrors = [];
+$rvIn = ['name' => trim((string)($_POST['rv_name'] ?? '')), 'rating' => (int)($_POST['rv_rating'] ?? 0), 'comment' => trim((string)($_POST['rv_comment'] ?? ''))];
+if (is_post() && ($_POST['action'] ?? '') === 'review') {
+    csrf_check();
+    if (!empty($_POST['website'])) redirect(product_url($p));
+    if (mb_strlen($rvIn['name']) < 2) $rvErrors['name'] = 'Please enter your name.';
+    if ($rvIn['rating'] < 1 || $rvIn['rating'] > 5) $rvErrors['rating'] = 'Please choose a star rating.';
+    if (mb_strlen($rvIn['comment']) > 1500) $rvErrors['comment'] = 'Review is too long (1500 characters max).';
+    if (!empty($_SESSION['reviewed'][$p['id']])) $rvErrors['form'] = 'You have already reviewed this product. Thank you!';
+    elseif (time() - ($_SESSION['last_review'] ?? 0) < 30) $rvErrors['form'] = 'Please wait a moment before posting another review.';
+    if (!$rvErrors) {
+        q('INSERT INTO reviews (product_id, name, rating, comment, approved, ip, created_at) VALUES (?, ?, ?, ?, 1, ?, ?)',
+          [$p['id'], mb_substr($rvIn['name'], 0, 80), $rvIn['rating'], $rvIn['comment'], client_ip(), now()]);
+        $_SESSION['last_review'] = time();
+        $_SESSION['reviewed'][$p['id']] = 1;
+        $_SESSION['review_thanks'] = 1;
+        redirect(product_url($p) . '#reviews');
+    }
+}
+$rvThanks = !empty($_SESSION['review_thanks']);
+unset($_SESSION['review_thanks']);
+$rvStats = review_stats((int)$p['id']);
+$reviews = rows('SELECT name, rating, comment, created_at FROM reviews WHERE product_id = ? AND approved = 1 ORDER BY created_at DESC, id DESC LIMIT 50', [$p['id']]);
+$rvDist = array_fill(1, 5, 0);
+foreach (rows('SELECT rating, COUNT(*) AS n FROM reviews WHERE product_id = ? AND approved = 1 GROUP BY rating', [$p['id']]) as $r) {
+    $k = (int)$r['rating'];
+    if (isset($rvDist[$k])) $rvDist[$k] = (int)$r['n'];
+}
+
 $images = product_images($p) ?: [null];
 $sizes  = product_sizes($p);
 $stock  = product_stock($p);
@@ -46,6 +77,16 @@ $jsonLd = [
         'url' => $selfUrl,
     ],
 ];
+if ($rvStats['count'] > 0) {
+    $jsonLd['aggregateRating'] = ['@type' => 'AggregateRating', 'ratingValue' => $rvStats['avg'], 'reviewCount' => $rvStats['count'], 'bestRating' => 5, 'worstRating' => 1];
+    $jsonLd['review'] = array_map(fn($r) => [
+        '@type' => 'Review',
+        'author' => ['@type' => 'Person', 'name' => $r['name']],
+        'datePublished' => substr($r['created_at'], 0, 10),
+        'reviewRating' => ['@type' => 'Rating', 'ratingValue' => (int)$r['rating'], 'bestRating' => 5],
+        'reviewBody' => (string)$r['comment'],
+    ], array_slice($reviews, 0, 5));
+}
 $bodyClass = 'product-page';
 require __DIR__ . '/includes/header.php';
 ?>
@@ -78,6 +119,13 @@ require __DIR__ . '/includes/header.php';
     <div class="pdp-info">
       <?php if ($p['category_name']): ?><a class="card-cat" href="<?= e(url('shop.php?category=' . rawurlencode($p['category_slug']))) ?>"><?= e($p['category_name']) ?></a><?php endif; ?>
       <h1 class="pdp-title"><?= e($p['name']) ?></h1>
+      <a class="pdp-rating" href="#reviews">
+        <?php if ($rvStats['count']): ?>
+          <?= stars_html($rvStats['avg'], 18) ?> <strong><?= e(number_format($rvStats['avg'], 1)) ?></strong> <span class="muted">(<?= $rvStats['count'] ?> review<?= $rvStats['count'] === 1 ? '' : 's' ?>)</span>
+        <?php else: ?>
+          <?= stars_html(0, 18) ?> <span class="muted">Be the first to review</span>
+        <?php endif; ?>
+      </a>
       <div class="price-row price-lg">
         <span class="price"><?= e(money($p['price'])) ?></span>
         <?php if ($off > 0): ?>
@@ -148,6 +196,66 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
+
+<section class="section reviews-section" id="reviews">
+  <div class="container">
+    <div class="section-head"><div><span class="kicker">Customer reviews</span><h2>What fans say</h2></div></div>
+    <div class="reviews-grid">
+      <div class="reviews-side">
+        <div class="panel rv-summary">
+          <?php if ($rvStats['count']): ?>
+            <div class="rv-score"><strong><?= e(number_format($rvStats['avg'], 1)) ?></strong><div><?= stars_html($rvStats['avg'], 20) ?><span class="muted small">Based on <?= $rvStats['count'] ?> review<?= $rvStats['count'] === 1 ? '' : 's' ?></span></div></div>
+            <ul class="rv-bars">
+              <?php for ($i = 5; $i >= 1; $i--): $pct = $rvStats['count'] ? round($rvDist[$i] / $rvStats['count'] * 100) : 0; ?>
+                <li><span><?= $i ?>★</span><span class="rv-bar"><span style="width:<?= $pct ?>%"></span></span><span class="muted"><?= $rvDist[$i] ?></span></li>
+              <?php endfor; ?>
+            </ul>
+          <?php else: ?>
+            <p class="muted">No reviews yet. Bought this jersey? Tell other fans what you think.</p>
+          <?php endif; ?>
+        </div>
+
+        <form method="post" action="<?= e(product_url($p)) ?>#reviews" class="panel rv-form" novalidate>
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="review">
+          <div class="hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+          <h3 class="panel-title">Write a review</h3>
+          <?php if ($rvThanks): ?><div class="alert alert-success" role="status">Thanks for your review!</div><?php endif; ?>
+          <?php if (!empty($rvErrors['form'])): ?><div class="alert alert-error"><?= e($rvErrors['form']) ?></div><?php endif; ?>
+          <fieldset class="field <?= isset($rvErrors['rating']) ? 'has-error' : '' ?>">
+            <legend>Your rating</legend>
+            <div class="star-input">
+              <?php for ($i = 5; $i >= 1; $i--): ?>
+                <input type="radio" id="rv-star-<?= $i ?>" name="rv_rating" value="<?= $i ?>" <?= $rvIn['rating'] === $i ? 'checked' : '' ?> required>
+                <label for="rv-star-<?= $i ?>" title="<?= $i ?> star<?= $i > 1 ? 's' : '' ?>"><span class="visually-hidden"><?= $i ?> star<?= $i > 1 ? 's' : '' ?></span></label>
+              <?php endfor; ?>
+            </div>
+            <?php if (isset($rvErrors['rating'])): ?><p class="field-error"><?= e($rvErrors['rating']) ?></p><?php endif; ?>
+          </fieldset>
+          <div class="field <?= isset($rvErrors['name']) ? 'has-error' : '' ?>"><label for="rv-name">Your name</label><input id="rv-name" name="rv_name" value="<?= e($rvIn['name']) ?>" maxlength="80" autocomplete="name" required><?php if (isset($rvErrors['name'])): ?><p class="field-error"><?= e($rvErrors['name']) ?></p><?php endif; ?></div>
+          <div class="field <?= isset($rvErrors['comment']) ? 'has-error' : '' ?>"><label for="rv-comment">Review <span class="muted">(optional)</span></label><textarea id="rv-comment" name="rv_comment" rows="4" maxlength="1500" placeholder="Fit, quality, delivery…"><?= e($rvIn['comment']) ?></textarea><?php if (isset($rvErrors['comment'])): ?><p class="field-error"><?= e($rvErrors['comment']) ?></p><?php endif; ?></div>
+          <button class="btn btn-primary" type="submit" data-submit-once>Post review</button>
+        </form>
+      </div>
+
+      <div class="rv-list">
+        <?php if (!$reviews): ?>
+          <p class="muted">Reviews from customers will appear here.</p>
+        <?php endif; ?>
+        <?php foreach ($reviews as $r): ?>
+          <article class="rv-item">
+            <header>
+              <span class="rv-avatar"><?= e(mb_strtoupper(mb_substr($r['name'], 0, 1))) ?></span>
+              <div><strong><?= e($r['name']) ?></strong><span class="muted small"><?= e(nice_date($r['created_at'], false)) ?></span></div>
+              <?= stars_html((float)$r['rating'], 16) ?>
+            </header>
+            <?php if (trim((string)$r['comment']) !== ''): ?><p><?= nl2br(e($r['comment'])) ?></p><?php endif; ?>
+          </article>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+</section>
 
 <?php if ($related): ?>
 <section class="section">
