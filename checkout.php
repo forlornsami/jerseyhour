@@ -98,6 +98,15 @@ $inv = fn($k) => isset($errors[$k]) ? ' aria-invalid="true" aria-describedby="er
 
 $title = 'Checkout';
 $bodyClass = 'checkout-page';
+if (!is_post() && $cart['lines']) {
+    pixel_event('InitiateCheckout', [
+        'content_ids'  => array_values(array_unique(array_map(fn($l) => (string)$l['id'], $cart['lines']))),
+        'content_type' => 'product',
+        'num_items'    => (int)$cart['count'],
+        'value'        => round((float)$cart['subtotal'], 2),
+        'currency'     => pixel_currency(),
+    ]);
+}
 require __DIR__ . '/includes/header.php';
 ?>
 <section class="page-head page-head-sm">

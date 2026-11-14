@@ -88,6 +88,40 @@ function setting(string $key, $default = '')
     return (isset($all[$key]) && $all[$key] !== '') ? $all[$key] : $default;
 }
 
+/* ---------- Meta (Facebook) Pixel ---------- */
+
+/** Pixel ID from Admin → Settings, digits only. Empty string means the Pixel is off. */
+function meta_pixel_id(): string
+{
+    $id = preg_replace('~\D~', '', (string)setting('meta_pixel_id'));
+    return strlen($id) >= 10 ? $id : '';
+}
+
+/** 3-letter currency code sent with Pixel events (Meta needs e.g. PKR, not "Rs."). */
+function pixel_currency(): string
+{
+    $c = strtoupper(trim((string)setting('pixel_currency', 'PKR')));
+    return preg_match('~^[A-Z]{3}$~', $c) ? $c : 'PKR';
+}
+
+/** Queue a Pixel event for this page; includes/header.php prints it after PageView. */
+function pixel_event(string $name, array $params = [], string $eventId = ''): void
+{
+    $GLOBALS['pixelEvents'][] = [$name, $params, $eventId];
+}
+
+/** Pixel parameters describing one product. */
+function pixel_product(array $p, int $qty = 1): array
+{
+    return [
+        'content_ids'  => [(string)$p['id']],
+        'content_name' => (string)$p['name'],
+        'content_type' => 'product',
+        'value'        => round((float)$p['price'] * $qty, 2),
+        'currency'     => pixel_currency(),
+    ];
+}
+
 function save_setting(string $key, $value): void
 {
     $exists = val('SELECT COUNT(*) FROM settings WHERE skey = ?', [$key]);

@@ -10,6 +10,19 @@ $items = rows('SELECT * FROM order_items WHERE order_id = ?', [$o['id']]);
 $store = setting('store_name', 'JerseyHour');
 $firstName = explode(' ', trim($o['customer_name']))[0];
 
+// Meta Pixel: report the purchase once per order (not again if the page is refreshed)
+if (empty($_SESSION['pixel_purchase'][$o['order_no']])) {
+    $_SESSION['pixel_purchase'][$o['order_no']] = 1;
+    pixel_event('Purchase', [
+        'content_ids'  => array_values(array_unique(array_map(fn($i) => (string)$i['product_id'], $items))),
+        'contents'     => array_map(fn($i) => ['id' => (string)$i['product_id'], 'quantity' => (int)$i['qty']], $items),
+        'content_type' => 'product',
+        'num_items'    => array_sum(array_map(fn($i) => (int)$i['qty'], $items)),
+        'value'        => round((float)$o['total'], 2),
+        'currency'     => pixel_currency(),
+    ], 'order-' . $o['order_no']);
+}
+
 $title = 'Order placed';
 $bodyClass = 'success-page';
 require __DIR__ . '/includes/header.php';

@@ -34,6 +34,26 @@ $activeCat = $_GET['category'] ?? '';
 <link rel="stylesheet" href="<?= e(asset('css/style.css')) ?>">
 <script>window.JH = <?= json_encode(['base' => BASE, 'csrf' => csrf_token(), 'currency' => setting('currency_symbol', 'Rs.')]) ?>;</script>
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
+<?php if ($pixelId = meta_pixel_id()): $pjf = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT; ?>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '<?= $pixelId ?>');
+fbq('track', 'PageView');
+<?php foreach ($GLOBALS['pixelEvents'] ?? [] as [$_pev, $_pp, $_pid]): ?>
+fbq('track', <?= json_encode($_pev, $pjf) ?>, <?= json_encode((object)$_pp, $pjf) ?><?= $_pid !== '' ? ', ' . json_encode(['eventID' => $_pid], $pjf) : '' ?>);
+<?php endforeach; ?>
+</script>
+<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=<?= $pixelId ?>&amp;ev=PageView&amp;noscript=1"></noscript>
+<!-- End Meta Pixel Code -->
+<?php endif; ?>
 <?php if (!empty($jsonLd)): ?><script type="application/ld+json"><?= json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?></script><?php endif; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
