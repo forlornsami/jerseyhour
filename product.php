@@ -88,6 +88,7 @@ if ($rvStats['count'] > 0) {
     ], array_slice($reviews, 0, 5));
 }
 $bodyClass = 'product-page';
+pixel_event('ViewContent', pixel_product($p));
 require __DIR__ . '/includes/header.php';
 ?>
 
@@ -134,7 +135,7 @@ require __DIR__ . '/includes/header.php';
         <?php endif; ?>
       </div>
 
-      <form class="buy-form" method="post" action="<?= e(url('api/cart.php')) ?>" data-add-to-cart novalidate>
+      <form class="buy-form" method="post" action="<?= e(url('api/cart.php')) ?>" data-add-to-cart<?php if (meta_pixel_id()): ?> data-pixel="<?= e(json_encode(pixel_product($p), JSON_UNESCAPED_UNICODE)) ?>"<?php endif; ?> novalidate>
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="add">
         <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">

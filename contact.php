@@ -21,6 +21,7 @@ if (is_post()) {
           [mb_substr($in['name'], 0, 120), mb_substr($in['phone'], 0, 40), mb_substr($in['email'], 0, 150), $in['message'], now()]);
         $_SESSION['last_contact'] = time();
         $sent = true;
+        pixel_event('Contact');
         $in = ['name' => '', 'phone' => '', 'email' => '', 'message' => ''];
     }
 }

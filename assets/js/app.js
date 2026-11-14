@@ -219,6 +219,13 @@
         btn.classList.remove('is-loading'); btn.disabled = false;
         if (!r.ok) { toast(r.message || 'Could not add to cart', { error: true }); return; }
         if (r.cart) { setCount(r.cart.count); renderCart(r.cart); }
+        if (window.fbq && buy.dataset.pixel) {
+          try {
+            var px = JSON.parse(buy.dataset.pixel), q = Math.max(1, parseInt(fd.get('qty'), 10) || 1);
+            px.value = Math.round(px.value * q * 100) / 100;
+            window.fbq('track', 'AddToCart', px);
+          } catch (err) {}
+        }
         if (buyNow) { location.href = JH.base + '/checkout.php'; return; }
         var img = $('.gallery-slide img');
         toast(r.message || 'Added to cart', { image: img ? img.getAttribute('src') : '', action: 'View cart' });

@@ -38,6 +38,10 @@ $groups = [
         'tiktok'           => ['TikTok URL', 'url', 'https://tiktok.com/@jerseyhour'],
         'meta_description' => ['Search engine description', 'textarea', '', 'About 150 characters — shown on Google results.'],
     ]],
+    'tracking' => ['Meta (Facebook) Pixel', 'Track visits, add-to-carts and orders for your Facebook & Instagram ads.', [
+        'meta_pixel_id'  => ['Pixel ID', 'text', '', 'The number from Meta Events Manager → Data sources → your Pixel (e.g. 1234567890123456). Leave empty to turn the Pixel off.'],
+        'pixel_currency' => ['Currency code for ads', 'text', 'PKR', '3-letter code sent with order values, e.g. PKR.'],
+    ]],
     'notify' => ['Notifications', 'Get told about new orders.', [
         'order_notify_email' => ['Email new orders to', 'email', '', 'Requires your hosting to support PHP mail(). Leave empty to disable.'],
     ]],
@@ -64,6 +68,14 @@ if (is_post()) {
             if ($type === 'color' && !preg_match('~^#[0-9a-f]{6}$~i', $v)) { $errs[] = $def[0] . ' must be a colour like #7A2230.'; continue; }
             if ($type === 'email' && $v !== '' && !filter_var($v, FILTER_VALIDATE_EMAIL)) { $errs[] = $def[0] . ' is not a valid email.'; continue; }
             if ($type === 'url' && $v !== '' && !preg_match('~^https?://~i', $v)) $v = 'https://' . $v;
+            if ($key === 'meta_pixel_id' && $v !== '') {
+                $v = preg_replace('~\D~', '', $v);
+                if (strlen($v) < 10 || strlen($v) > 20) { $errs[] = 'Pixel ID should be the 15–16 digit number from Meta Events Manager.'; continue; }
+            }
+            if ($key === 'pixel_currency') {
+                $v = strtoupper($v);
+                if ($v !== '' && !preg_match('~^[A-Z]{3}$~', $v)) { $errs[] = 'Currency code must be 3 letters, like PKR.'; continue; }
+            }
             if ($key === 'store_name' && $v === '') { $errs[] = 'Store name cannot be empty.'; continue; }
             save_setting($key, mb_substr($v, 0, 2000));
         }
